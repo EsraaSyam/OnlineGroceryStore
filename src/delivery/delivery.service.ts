@@ -9,8 +9,6 @@ export class DeliveryService {
 
         const lastDeliveryDate = this.formatDate(addDays(orderDateTime, 14));
 
-        console.log('Order Date:', lastDeliveryDate);
-
         const products = req.products.map(product => product.type);
 
         const hasExternal = products.includes(ProductType.EXTERNAL);
@@ -19,9 +17,8 @@ export class DeliveryService {
 
         const hasInStock = products.includes(ProductType.IN_STOCK);
 
-        const firstDeliveryDate = this.calcFirstDeliveryDate(orderDateTime, hasExternal, hasFreshFood, hasInStock);
 
-        console.log('First Delivery Date:', firstDeliveryDate);
+        const firstDeliveryDate = this.calcFirstDeliveryDate(orderDateTime, hasExternal, hasFreshFood, hasInStock);
 
         const firstDeliveryDateObj = this.parseDate(firstDeliveryDate);
 
@@ -34,12 +31,12 @@ export class DeliveryService {
     }
 
     private parseDate(dateString: string): Date {
-        const date = parse(dateString, "yyyy-MM-dd\'T\'HH:mm:ss", new Date());
+        const date = parse(dateString, "yyyy-MM-dd\'T\'HH:mm:ss.SSSX", new Date());
         return date;
     }
 
     private formatDate(date: Date): string {
-        return format(date, "yyyy-MM-dd\'T\'HH:mm:ss");
+        return format(date, "yyyy-MM-dd\'T\'HH:mm:ss.SSSX");
     }
 
     private isGreenTimeSlot(date: Date): boolean {
@@ -85,6 +82,12 @@ export class DeliveryService {
                     isGreen: this.isGreenTimeSlot(slotStart)
                 }); 
             }
+
+            timeSlots.sort((a, b) => {
+                if (a.isGreen && !b.isGreen) return -1;
+                if (!a.isGreen && b.isGreen) return 1;
+                return a.startTime.localeCompare(b.startTime);
+            });
 
             deliverySlots.push({
                 date: format(currentDate, 'yyyy-MM-dd'),

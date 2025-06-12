@@ -1,20 +1,31 @@
-import { Body, Controller, Get, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Render, Res } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { OrderRequest } from './request/order.request';
 import { Response } from 'express';
 
 @Controller('delivery')
 export class DeliveryController {
-    constructor (
+    constructor(
         private readonly deliveryService: DeliveryService,
-    ) {}
+    ) { }
 
     @Get()
-    getDeliverySlots(@Body() req: OrderRequest, @Res() res: Response) {
-       const deliverySlots = this.deliveryService.getDeliverySlots(req);
-         return res.status(200).json({
+    @Render('index')
+    getForm() {
+        return {};
+    }
+
+    @Post()
+    @Render('index')
+    getDeliverySlots(@Body() req: OrderRequest) {
+        if (!req.orderDate) {
+            req.orderDate = new Date().toISOString();
+        }
+        console.log('Received Order Request:', req);
+        const deliverySlots = this.deliveryService.getDeliverySlots(req);
+        return {
             deliverySlots: deliverySlots,
             message: 'Delivery slots retrieved successfully'
-        });
+        };
     }
 }
