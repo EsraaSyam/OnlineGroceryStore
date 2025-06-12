@@ -50,15 +50,20 @@ export class DeliveryService {
         return false;
     }
 
+    private getNextValidDeliveryDay(date: Date, isExternal: boolean): { date: Date, cnt: number } {
+        let cnt = 0;
+        while (!this.isValidDeliveryDay(date, isExternal)) {
+            date = addDays(date, 1);
+            cnt++;
+        }
+        return { date, cnt };
+    }
+
     private generateDeliverySlots(firstDeliveryDate: Date, lastDeliveryDate: Date, isExternal: boolean) {
         const deliverySlots = [];
         for (let currentDate = firstDeliveryDate; currentDate <= lastDeliveryDate; currentDate = addDays(currentDate, 1)) {
-            if (!this.isValidDeliveryDay(currentDate, isExternal)) {
-                do {
-                    currentDate = addDays(currentDate, 1);
-                } while (!this.isValidDeliveryDay(currentDate, isExternal));
-            }
-
+            currentDate = this.getNextValidDeliveryDay(currentDate, isExternal).date;
+            
             const day = format(currentDate, 'EEEE');
 
             const timeSlots = [];
@@ -111,15 +116,21 @@ export class DeliveryService {
 
     }
 
-    private calcFirstDeliveryDate(orderDate: Date, hasExternal: boolean, hasFreshFood: boolean, hasInStock: boolean): string {
-        let cnt = 0;
-        // Check if the order date is a valid delivery day
-        while (!this.isValidDeliveryDay(orderDate, hasExternal)) {
-            orderDate = addDays(orderDate, 1);
-            cnt++;
+    private isAfterCutoffTime(orderDate: Date, cutOffHour: number, cutOffMinute: number = 0): boolean {
+        const currentHour = orderDate.getHours();
+        const currentMinute = orderDate.getMinutes();
+
+        if (currentHour > cutOffHour || (currentHour === cutOffHour && currentMinute >= cutOffMinute)) {
+            return true;
         }
 
-        console.log(cnt);
+        return false;
+    }
+
+    private calcFirstDeliveryDate(orderDate: Date, hasExternal: boolean, hasFreshFood: boolean, hasInStock: boolean): string {
+        let { date, cnt } = this.getNextValidDeliveryDay(orderDate, hasExternal);
+
+        orderDate = date;
 
         if (hasExternal && cnt < 3) {
             orderDate = addDays(orderDate, 3 - cnt);
@@ -127,13 +138,13 @@ export class DeliveryService {
             return this.formatDate(orderDate);
         }
 
-        if (!cnt && hasFreshFood && (orderDate.getHours() > 12 || (orderDate.getHours() === 12 && orderDate.getMinutes() > 0))) {
+        if (!cnt && hasFreshFood && this.isAfterCutoffTime(orderDate, 12)) {
             orderDate = addDays(orderDate, 1);
             orderDate = startOfDay(orderDate);
             return this.formatDate(orderDate);
         }
 
-        if (!cnt && hasInStock && (orderDate.getHours() > 18 || (orderDate.getHours() === 18 && orderDate.getMinutes() > 0))) {
+        if (!cnt && hasInStock && this.isAfterCutoffTime(orderDate, 18)) {
             orderDate = addDays(orderDate, 1);
             orderDate = startOfDay(orderDate);
             return this.formatDate(orderDate);
