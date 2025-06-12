@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Slots</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Delivery Slots</h1>
+    <form action="/delivery" method="POST">
+      <label>Products:</label>
+      <div id="productsContainer" class="products-container">
+        <div>
+          <select name="products[0][type]" required>
+            <option value=""> Select Type</option>
+            <option value="IN_STOCK">In Stock</option>
+            <option value="FRESH_FOOD">Fresh Food</option>
+            <option value="EXTERNAL">External</option>
+          </select>
+          <input type="number" name="products[0][count]" min="1" required placeholder="Count">
+        </div>
+      </div>
+      <button type="button" id="addProduct">Add Product</button>
+      <div class="submit-button-container">
+        <button type="submit" id="submitButton"> Submit</button>
+      </div>
+
+    </form>
+
+    {{#if deliverySlots}}
+      <h2>Available Delivery Slots</h2>
+      {{#each deliverySlots}}
+      <h3> {{date}}, {{day}}</h3>
+      <ul>
+        {{#each timeSlots}}
+        <li class="{{#if isGreen}}green-slot{{/if}}">
+          {{startTime}} - {{endTime}}
+        </li>
+        {{/each}}
+      </ul>
+    {{/each}}
+    {{else}}
+    <p> Submit the form to see slots</p>
+  {{/if}}
+</div>
+<script src="/js/script.js"></script>
+</body>
+
+</html>
